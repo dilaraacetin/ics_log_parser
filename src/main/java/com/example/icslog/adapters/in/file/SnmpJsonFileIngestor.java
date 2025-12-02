@@ -107,13 +107,17 @@ public class SnmpJsonFileIngestor {
     private Instant extractFrameTime(JsonNode frameNode) {
         JsonNode utc = frameNode.path("frame.time_utc");
         if (utc.isTextual()) {
+            String text = utc.asText();
             try {
-                return Instant.parse(utc.asText());
-            } catch (DateTimeParseException ignored) {}
+                return Instant.parse(text);
+            } catch (DateTimeParseException e) {
+                System.err.println("Could not parse frame.time_utc '" + text + "': " + e.getMessage());
+            }
         }
 
-        return Instant.now();
+        return null;
     }
+
 
     private String extractSrcIp(JsonNode layers) {
         JsonNode ip = layers.path("ip");

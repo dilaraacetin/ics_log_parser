@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -65,11 +67,24 @@ public class SyslogJsonFileIngestor {
             System.err.println("Failed to read syslog json: " + e.getMessage());
         }
     }
-
     private Instant parseInstant(String s) {
-        if (s == null || s.isBlank()) return null;
-        return Instant.parse(s.replace("+03:00","Z")); // çok kaba, istersen DateTimeFormatter kullan
+        if (s == null || s.isBlank()) {
+            return null;
+        }
+
+        try {
+            return OffsetDateTime.parse(s).toInstant();
+        } catch (DateTimeParseException e) {
+            try {
+                String normalized = s.replace(' ', 'T');
+                return OffsetDateTime.parse(normalized).toInstant();
+            } catch (DateTimeParseException ex) {
+                System.err.println("Could not parse Instant from '" + s + "': " + ex.getMessage());
+                return null; 
+            }
+        }
     }
+
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class SyslogJsonRecord {
